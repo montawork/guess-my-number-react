@@ -2,4 +2,4 @@
 
 ## React.js - localstorage
 
-![]();
+![](./capture.png);
