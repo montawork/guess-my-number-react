@@ -1,58 +1,67 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useReducer } from 'react';
+import reducer from './reducer';
 
-function App() {
-  const [score, setScore] = useState(20);
-  const [message, setMessage] = useState({
+const initialState = {
+  score: 20,
+  message: {
     msg: 'Start guessing...',
     color: '#eee',
-  });
-  const [userGuess, setUserGuess] = useState('');
-  const [highScore, setHighScore] = useState(
-    localStorage.getItem('bestScore') || 0
-  );
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [randomNumber, setRandomNumber] = useState(undefined);
+  },
+  isCorrect: false,
+  userGuess: '',
+  randomNumber: undefined,
+  highScore: localStorage.getItem('bestScore') || 0,
+};
 
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { score, message, isCorrect, userGuess, randomNumber, highScore } =
+    state;
+
+  // get random number
   useEffect(() => {
-    setRandomNumber(Math.floor(Math.random() * 20) + 1);
+    dispatch({ type: 'RANDOM_NUMBER' });
   }, []);
 
-  const checkNumber = (e) => {
+  // update localStorage
+  const updateLS = (newHighScore) => {
+    dispatch({ type: 'UPDATE_LS', payload: newHighScore });
+  };
+
+  // check the answer
+  const checkNumber = () => {
     if (userGuess) {
-      setScore(score - 1);
+      dispatch({ type: 'DECREMENT_SCORE' });
       if (score > 1) {
         if (randomNumber === Number(userGuess)) {
-          setMessage({ msg: 'Correct number !!', color: '#eee' });
-          setIsCorrect(true);
+          dispatch({ type: 'CORRECT_ANSWER' });
           document.body.style.background = '#60b347';
           if (score > Number(highScore)) {
             localStorage.setItem('bestScore', score);
-            setHighScore(score);
+            updateLS(score);
           }
         } else {
           Number(userGuess) > randomNumber
-            ? setMessage({ msg: 'To high !!', color: '#eee' })
-            : setMessage({ msg: 'To low !!', color: '#eee' });
+            ? dispatch({ type: 'TO_HIGH' })
+            : dispatch({ type: 'TO_LOW' });
         }
       } else {
-        setMessage({ msg: 'Game over !!', color: '#dc2626' });
+        dispatch({ type: 'GAME_OVER' });
       }
     } else {
-      setMessage({ msg: 'Please enter a valid number', color: '#facc15' });
+      dispatch({ type: 'WARNING_ALERT' });
     }
   };
 
   // reset
   const resetGame = () => {
-    setMessage({
-      msg: 'Start guessing...',
-      color: '#eee',
-    });
-    setUserGuess('');
-    setScore(20);
-    setIsCorrect(false);
+    dispatch({ type: 'RESET' });
     document.body.style.background = '#222';
-    setRandomNumber(Math.floor(Math.random() * 20) + 1);
+  };
+
+  // get input value
+  const getUserGuess = (e) => {
+    dispatch({ type: 'USER_GUESS', payload: e.target.value });
   };
 
   return (
@@ -73,7 +82,7 @@ function App() {
             min="1"
             max="20"
             value={userGuess}
-            onChange={(e) => setUserGuess(e.target.value)}
+            onChange={getUserGuess}
           />
           <button
             className="btn check"
